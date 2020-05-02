@@ -8,6 +8,9 @@ GREEN = (0,255,0)
 RED = (255,0,0)
 PURPLE = (255,0,255)
 
+# image variables
+carIMG = pygame.image.load("media/redCar.png")
+
 # This class represents the walls/barriers in the game #
 class Wall(pygame.sprite.Sprite):
 
@@ -34,8 +37,8 @@ class Player(pygame.sprite.Sprite):
        super().__init__()
 
        # Set height and width
-       self.image = pygame.Surface([15,15])
-       self.image.fill(WHITE) #replace this with image when working
+       self.image = pygame.image.load("media/car.png")
+       #self.image.fill(WHITE) replace this with image when working
 
        # Make player start at top left corner
        self.rect = self.image.get_rect()
@@ -93,14 +96,14 @@ class CarPark1(CarPark):
         #make the walls using x, y, width and height from above)
         super().__init__()
 
-        #This is the list of walls in the form [x, y, width, height]
+        #This is the list of walls in the form [x, y, width, height, colour]
         walls = [[0, 0, 20, 250, WHITE],
                  [0, 350, 20, 250, WHITE],
                  [780, 0, 20, 250, WHITE],
                  [780, 350, 20, 250, WHITE],
                  [20, 0, 760, 20, WHITE],
                  [20, 580, 760, 20, WHITE],
-                 [390, 50, 20, 500, BLUE]
+                 [390, 150, 20, 300, BLUE]
                 ]
 
         # Loop through the list to create the wall, then add to the list
@@ -122,8 +125,8 @@ class CarPark2(CarPark):
                  [780, 350, 20, 250, RED],
                  [20, 0, 760, 20, RED],
                  [20, 580, 760, 20, RED],
-                 [190, 50, 20, 500, GREEN],
-                 [590, 50, 20, 500, GREEN]
+                 [190, 50, 20, 300, GREEN],
+                 [590, 50, 20, 300, GREEN]
                 ]
 
         # Loop through the list to create the wall, then add to the list
