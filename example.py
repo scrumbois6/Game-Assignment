@@ -1,4 +1,6 @@
-import pygame
+import pygame, random
+import tkinter as tk
+from tkinter import ttk
 
 # colour variables
 BLACK = (0,0,0)
@@ -8,8 +10,28 @@ GREEN = (0,255,0)
 RED = (255,0,0)
 PURPLE = (255,0,255)
 
+# screen variables
+SCREEN_WIDTH = 800
+SCREEN_HEIGHT = 600
+
+# font variables
+LARGE_FONT = ("Verdana", 12)
+NORM_FONT = ("Helvetica", 10)
+SMALL_FONT = ("Helvetica", 8)
+
+def popupmsg(msg):
+    popup = tk.Tk()
+    popup.wm_title("!")
+    label = ttk.Label(popup, text=msg, font=NORM_FONT)
+    label.pack(side="top", fill="x", pady=10)
+    B1 = ttk.Button(popup, text="Okay", command = popup.destroy)
+    B1.pack()
+    popup.mainloop()
+
 # image variables
-carIMG = pygame.image.load("media/redCar.png")
+carIMG = pygame.image.load("media/car.png")
+obstacleIMG = pygame.image.load("media/blueCar.png")
+backgroundIMG = pygame.image.load("media/background1.jpg")
 
 # This class represents the walls/barriers in the game #
 class Wall(pygame.sprite.Sprite):
@@ -21,7 +43,7 @@ class Wall(pygame.sprite.Sprite):
         self.image = pygame.Surface([width, height])
         self.image.fill(color)
 
-        # Make the player start in the top left corner
+        # Set a refernce to the player image rect
         self.rect = self.image.get_rect()
         self.rect.y = y
         self.rect.x = x
@@ -37,7 +59,7 @@ class Player(pygame.sprite.Sprite):
        super().__init__()
 
        # Set height and width
-       self.image = pygame.image.load("media/car.png")
+       self.image = carIMG
        #self.image.fill(WHITE) replace this with image when working
 
        # Make player start at top left corner
@@ -79,6 +101,66 @@ class Player(pygame.sprite.Sprite):
                 # Otherwise if moving left, do opposite
                 self.rect.top = block.rect.bottom
 
+# class to define an obstacle
+class Obstacle(pygame.sprite.Sprite):
+
+    def __init__(self):
+        # Ostacle construcutor - accepts 5 numbers passed into it
+        
+        super().__init__()
+
+        self.image = obstacleIMG
+        self.rect = self.image.get_rect(
+            center = (
+                random.randint(SCREEN_WIDTH, SCREEN_HEIGHT),
+                random.randint(0, SCREEN_HEIGHT),
+            )
+        )
+        self.speed = 1
+
+        #Move the obstacle based o speed - reomve when it leaves screen
+        def update(self):
+            self.rect.move_ip(-self.speed, 0)
+            if self.rect.right < 0:
+                self.pygame.sprite.kill()
+
+# class to define a moving obstacle
+class MovingObstacle(Obstacle):
+    
+    change_x = 0
+    change_y = 0
+
+    #set obstacle boundaries
+    boundary_top = 0
+    boundary_bottom = 0
+    boundary_left = 0
+    boundary_right = 0
+
+    player = None
+    level = None
+
+    def update(self):
+        # Move the platform
+        # If the player is in the way, it will cancell the game
+
+        # Move left/right
+        self.rect.x += self.change_x
+
+        # see if the obstacle hits the player
+        hit = pygame.sprite.collide_rect(self, self.player)
+        if hit:
+            # the obstacle hit the player
+            popupmsg("you hit an obstacle!")
+
+        # move up/down
+        self.rect.y += self.change_y
+
+        # see if the obstacle hits the player
+        hit = pygame.sprite.collide_rect(self, self.player)
+        if hit:
+            # the obstacle hit the player
+            popupmsg("you hit an obstacle!")
+
 # Base class for all car-parks #
 class CarPark(object):
     #Each car-park has a list of walls, and of enemy objects
@@ -89,6 +171,10 @@ class CarPark(object):
     def __init__(self):
         self.wall_list = pygame.sprite.Group()
         self.enemy_objects = pygame.sprite.Group()
+
+        # Background image
+        self.background = backgroundIMG
+
 
 # Level one - creates all walls in level 1
 class CarPark1(CarPark):
@@ -178,8 +264,14 @@ def main():
     # set the game window title
     pygame.display.set_caption('Car Park')
 
+    # create an event for adding anew obstacle to the screen
+    ADDOBSTACLE = pygame.USEREVENT + 7
+    # how many obstacles are put on the screen
+    pygame.time.set_timer(ADDOBSTACLE, 3000)
+
     # Create the player car object
     player = Player (50,50)
+    obstacles = pygame.sprite.Group()
     movingsprites = pygame.sprite.Group()
     movingsprites.add(player)
 
@@ -213,9 +305,6 @@ def main():
 
         # process an event in the game
         for event in pygame.event.get():
-            if event.type == pygame.QUIT:
-                done = True #game over or manaully closed
-
         # set code for using arrow keys
             if event.type == pygame.KEYDOWN:
                 if event.key == pygame.K_LEFT:
@@ -236,6 +325,14 @@ def main():
                     player.changespeed(0, 5)
                 if event.key == pygame.K_DOWN:
                     player.changespeed(0, -5)
+
+            if event.type == ADDOBSTACLE:
+                new_obstacle = Obstacle()
+                obstacles.add(new_obstacle)
+                movingsprites.add(new_obstacle)
+
+            if event.type == pygame.QUIT:
+                done = True #game over or manaully closed
 
         # game logic
 
