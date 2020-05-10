@@ -29,62 +29,41 @@ def popupmsg(msg):
     popup.mainloop()
 
 # image variables
-carIMG = pygame.image.load("media/car.png")
-obstacleIMG = pygame.image.load("media/blueCar.png")
-backgroundIMG = pygame.image.load("media/background1.jpg")
-
-# This class represents the walls/barriers in the game #
-class Wall(pygame.sprite.Sprite):
-
-    def __init__(self, x, y, width, height, color):
-        super().__init__()
-
-        # Make a blue wall, using dimensions provided in the function
-        self.image = pygame.Surface([width, height])
-        self.image.fill(color)
-
-        # Set a refernce to the player image rect
-        self.rect = self.image.get_rect()
-        self.rect.y = y
-        self.rect.x = x
+carIMG = pygame.image.load("Game-Assignment\media\car.png")
+obstacleIMG = pygame.image.load("Game-Assignment\media/blueCar.png")
+backgroundIMG = pygame.image.load("Game-Assignment\media/background1.jpg")
 
 # This class represents the character that the player controls
 class Player(pygame.sprite.Sprite):
 
-    # Speed vector
-    change_x = 0
-    change_y = 0
+    def __init__(self):
 
-    def __init__(self, x, y):
        super().__init__()
 
        # Set height and width
+       width = 40
+       height = 60
+       self.image = pygame.Surface([width, height])
        self.image = carIMG
-       #self.image.fill(WHITE) replace this with image when working
-
-       # Make player start at top left corner
        self.rect = self.image.get_rect()
-       self.rect.y = y
-       self.rect.x = x
 
-    # change speed of the player, with a press of arrow keys
-    def changespeed(self, x,y):
-        self.change_x += x
-        self.change_y += y
+       self.change_x = 0
+       self.change_y = 0
 
-    #Find a new position for the player
-    def move(self, walls):
+       self.level = None
 
-        #Move left/right
+    def update(self, obstacle_list):
+
+        # move let and right
         self.rect.x += self.change_x
 
         #did this make the player hit the wall?
-        block_hit_list = pygame.sprite.spritecollide(self, walls, False)
+        block_hit_list = pygame.sprite.spritecollide(self, self.level.obstacle_list, False)
         for block in block_hit_list:
             #If moving right, set right side to the left side of the item hit
             if self.change_x > 0:
                 self.rect.right = block.rect.left
-            else:
+            elif self.change_x < 0:
                 # Otherwise if moving left, do opposite
                 self.rect.left = block.rect.right
 
@@ -92,45 +71,60 @@ class Player(pygame.sprite.Sprite):
         self.rect.y += self.change_y
 
         #did this make the player hit the wall?
-        block_hit_list = pygame.sprite.spritecollide(self, walls, False)
+        block_hit_list = pygame.sprite.spritecollide(self, self.level.obstacle_list, False)
         for block in block_hit_list:
             #If moving right, set right side to the top/bottom of the item hit
             if self.change_y > 0:
                 self.rect.bottom = block.rect.top
-            else:
+            elif self.change_y < 0:
                 # Otherwise if moving left, do opposite
                 self.rect.top = block.rect.bottom
 
-# class to define an obstacle
+                #stop moving up
+                self.change_y = 0
+
+                if isinstance(block, MovingObstacle):
+                    self.rect.x += block.change_x
+
+        # define player controlled movement
+    def go_left(self):
+        self.change_x = -6
+
+    def go_right(self):
+        self.change_x = 6
+        
+    def go_up(self):
+        self.change_y = -6
+        
+    def go_down(self):
+        self.change_y = 6
+
+    def stopX(self):
+        self.change_x = 0
+
+    def stopY(self):
+        self.change_y = 0
+
+
+# This class represents the walls/barriers in the game #
 class Obstacle(pygame.sprite.Sprite):
 
-    def __init__(self):
-        # Ostacle construcutor - accepts 5 numbers passed into it
-        
+    def __init__(self, x, y, width, height):
         super().__init__()
 
+        self.image = pygame.Surface([width, height])
         self.image = obstacleIMG
-        self.rect = self.image.get_rect(
-            center = (
-                random.randint(SCREEN_WIDTH, SCREEN_HEIGHT),
-                random.randint(0, SCREEN_HEIGHT),
-            )
-        )
-        self.speed = 1
+        self.rect = self.image.get_rect()
 
-        #Move the obstacle based o speed - reomve when it leaves screen
-        def update(self):
-            self.rect.move_ip(-self.speed, 0)
-            if self.rect.right < 0:
-                self.pygame.sprite.kill()
+        self.rect.y = y
+        self.rect.x = x
 
-# class to define a moving obstacle
+# class to define an obstacle
 class MovingObstacle(Obstacle):
-    
+
     change_x = 0
     change_y = 0
 
-    #set obstacle boundaries
     boundary_top = 0
     boundary_bottom = 0
     boundary_left = 0
@@ -140,117 +134,199 @@ class MovingObstacle(Obstacle):
     level = None
 
     def update(self):
-        # Move the platform
-        # If the player is in the way, it will cancell the game
+        #move the platform
 
-        # Move left/right
+        #move obstalce left/right
         self.rect.x += self.change_x
 
-        # see if the obstacle hits the player
+        #see if we hit the player car
         hit = pygame.sprite.collide_rect(self, self.player)
         if hit:
             # the obstacle hit the player
             popupmsg("you hit an obstacle!")
+            # the obstacle hit the player, so kill the player
+            if self.change_x < 0:
+                self.player.rect.right = self.rect.left
+            else:
+                self.player.rect.left = self.rect.right
 
-        # move up/down
+        #move obstalce up/down
         self.rect.y += self.change_y
 
-        # see if the obstacle hits the player
+        #see if we hit the player car
         hit = pygame.sprite.collide_rect(self, self.player)
         if hit:
             # the obstacle hit the player
             popupmsg("you hit an obstacle!")
+            # the obstacle hit the player, so kill the player
+            if self.change_y < 0:
+                self.player.rect.bottom = self.rect.top
+            else:
+                self.player.rect.top = self.rect.boundary_bottom
 
 # Base class for all car-parks #
 class CarPark(object):
-    #Each car-park has a list of walls, and of enemy objects
-    wall_list = None #start empty to initiate
-    enemy_objects = None 
 
+    obstacle_list = None
     #construct to create the lists of walls and enemies
-    def __init__(self):
-        self.wall_list = pygame.sprite.Group()
+    def __init__(self, player):
+        self.obstacle_list = pygame.sprite.Group()
         self.enemy_objects = pygame.sprite.Group()
+        self.player = player
 
         # Background image
         self.background = backgroundIMG
 
+    #update everything on the level
+    def update(self):
+        self.obstacle_list.update()
+        self.enemy_objects.update()
+
+    def draw(self, screen):
+        #draw everthing on the level
+        screen.fill(GREEN)
+
+        self.obstacle_list.draw(screen)
+        self.enemy_objects.draw(screen)
+
 
 # Level one - creates all walls in level 1
 class CarPark1(CarPark):
-    def __init__(self):
-        #make the walls using x, y, width and height from above)
-        super().__init__()
 
-        #This is the list of walls in the form [x, y, width, height, colour]
-        walls = [[0, 0, 20, 250, WHITE],
-                 [0, 350, 20, 250, WHITE],
-                 [780, 0, 20, 250, WHITE],
-                 [780, 350, 20, 250, WHITE],
-                 [20, 0, 760, 20, WHITE],
-                 [20, 580, 760, 20, WHITE],
-                 [390, 150, 20, 300, BLUE]
-                ]
+    def __init__(self, player):
+        #make the walls using x, y, width and height from above)
+        CarPark.__init__(self, player)
+
+        #This is the list of walls in the form [x, y, width, height]
+        obstacle = [[0, 0, 20, 250],
+                 [0, 350, 20, 250],
+                 [780, 0, 20, 250],
+                 [780, 350, 20, 250],
+                 ]
 
         # Loop through the list to create the wall, then add to the list
         # for the level
-        for item in walls:
-            wall = Wall(item[0], item[1], item[2], item[3], item[4])
-            self.wall_list.add(wall)
+        for item in obstacle:
+            block = Obstacle(item[0], item[1], item[2], item[3])
+            self.obstacle_list.add(block)
+
+        # add a moving obstacle
+        block = MovingObstacle(70, 40, 250, 250)
+        block.rect.x = 300
+        block.rect.y = 300
+        block.boundary_left = 400
+        block.boundary_right = 400
+        block.change_x = 1
+        block.player = self.player
+        block.level = self
+        self.obstacle_list.add(block)
+
+        # add a moving obstacle
+        block = MovingObstacle(0, 350, 250, 250)
+        block.rect.x = 100
+        block.rect.y = 100
+        block.boundary_left = 400
+        block.boundary_right = 400
+        block.change_y = -1
+        block.player = self.player
+        block.level = self
+        self.obstacle_list.add(block)
 
 # Level Two - creates all walls in level 2
 class CarPark2(CarPark):
-    def __init__(self):
+    def __init__(self, player):
         #make the walls using x, y, width and height from above)
-        super().__init__()
+        CarPark.__init__(self, player)
 
         #This is the list of walls in the form [x, y, width, height]
-        walls = [[0, 0, 20, 250, RED],
-                 [0, 350, 20, 250, RED],
-                 [780, 0, 20, 250, RED],
-                 [780, 350, 20, 250, RED],
-                 [20, 0, 760, 20, RED],
-                 [20, 580, 760, 20, RED],
-                 [190, 50, 20, 300, GREEN],
-                 [590, 50, 20, 300, GREEN]
-                ]
+        obstacle = [[0, 0, 20, 250],
+                 [0, 350, 20, 250],
+                 [780, 0, 20, 250],
+                 [780, 350, 20, 250],
+                 ]
 
         # Loop through the list to create the wall, then add to the list
         # for the level
-        for item in walls:
-            wall = Wall(item[0], item[1], item[2], item[3], item[4])
-            self.wall_list.add(wall)
+        for item in obstacle:
+            block = Obstacle(item[0], item[1], item[2], item[3])
+            self.obstacle_list.add(block)
+
+        # add a moving obstacle
+        block = MovingObstacle(0, 350, 250, 250)
+        block.rect.x = 100
+        block.rect.y = 100
+        block.boundary_left = 400
+        block.boundary_right = 400
+        block.change_y = -1
+        block.player = self.player
+        block.level = self
+        self.obstacle_list.add(block)
+
+        # add another moving obstacle
+        block = MovingObstacle(70, 70, 250, 250)
+        block.rect.x = 1500
+        block.rect.y = 300
+        block.boundary_top = 400
+        block.boundary_bottom = 400
+        block.change_y = -1
+        block.player = self.player
+        block.level = self
+        self.obstacle_list.add(block)
 
 # Level Three - creates all walls in level 3
 class CarPark3(CarPark):
-    def __init__(self):
+    def __init__(self, player):
         #make the walls using x, y, width and height from above)
-        super().__init__()
+        CarPark.__init__(self, player)
 
-        #This is the list of walls in the form [x, y, width, height]
-        walls = [[0, 0, 20, 250, PURPLE],
-                 [0, 350, 20, 250, PURPLE],
-                 [780, 0, 20, 250, PURPLE],
-                 [780, 350, 20, 250, PURPLE],
-                 [20, 0, 760, 20, PURPLE],
-                 [20, 580, 760, 20, PURPLE]
-                ]
+        #This is the list of walls in the form [x, y, width, height, colour]
+        obstacle = [[50, 50, 500, 550],
+                 [50, 50, 800, 400],
+                 [50, 50, 1000, 500],
+                 [50, 50, 1200, 280],
+                 [50, 50, 700, 300],
+                 [50, 50, 800, 400],
+                 [50, 50, 1200, 280],
+                 ]
 
         # Loop through the list to create the wall, then add to the list
         # for the level
-        for item in walls:
-            wall = Wall(item[0], item[1], item[2], item[3], item[4])
-            self.wall_list.add(wall)
+        for item in obstacle:
+            block = Obstacle(item[0], item[1], item[2], item[3])
+            self.obstacle_list.add(block)
 
-        #create 'random' red walls at the below x and y coordination for position
-        for x in range(100, 800, 100):
-            for y in range(50, 451, 300):
-                wall = Wall(x, y, 20, 200, RED)
-                self.wall_list.add(wall)
-        #create 'random' white walls at the below x and y coordination for position
-        for x in range(150, 700, 100):
-            wall = Wall(x, 200, 20, 200, WHITE)
-            self.wall_list.add(wall)
+        # add a moving obstacle
+        block = MovingObstacle(70, 40, 250, 250)
+        block.rect.x = 1350
+        block.rect.y = 280
+        block.boundary_left = 400
+        block.boundary_right = 400
+        block.change_x = 1
+        block.player = self.player
+        block.level = self
+        self.obstacle_list.add(block)
+
+        # add another moving obstacle
+        block = MovingObstacle(70, 70, 250, 250)
+        block.rect.x = 1500
+        block.rect.y = 300
+        block.boundary_top = 400
+        block.boundary_bottom = 400
+        block.change_y = -1
+        block.player = self.player
+        block.level = self
+        self.obstacle_list.add(block)
+
+        # add a moving obstacle
+        block = MovingObstacle(60, 30, 250, 250)
+        block.rect.x = 1200
+        block.rect.y = 300
+        block.boundary_left = 400
+        block.boundary_right = 400
+        block.change_x = 1
+        block.player = self.player
+        block.level = self
+        self.obstacle_list.add(block)
 
 # Main Program - using above classes #
 def main():
@@ -259,125 +335,115 @@ def main():
     pygame.init()
 
     #create an 800x600 pixel screen
-    screen = pygame.display.set_mode([800, 600])
+    size = [SCREEN_WIDTH, SCREEN_HEIGHT]
+    screen = pygame.display.set_mode(size)
 
     # set the game window title
     pygame.display.set_caption('Car Park')
 
-    # create an event for adding anew obstacle to the screen
-    ADDOBSTACLE = pygame.USEREVENT + 7
-    # how many obstacles are put on the screen
-    pygame.time.set_timer(ADDOBSTACLE, 3000)
-
     # Create the player car object
-    player = Player (50,50)
-    obstacles = pygame.sprite.Group()
-    movingsprites = pygame.sprite.Group()
-    movingsprites.add(player)
+    player = Player()
 
-    # create an empty list of carPark levels to fill with levels below
-    carParks = []
+    # create all the Car Park levels
+    CarPark_list = []
+    CarPark_list.append(CarPark1(player))
+    CarPark_list.append(CarPark2(player))
+    CarPark_list.append(CarPark3(Player))
 
-    #create the Car Parks using above pre-defined classes
-    # level 1
-    carPark = CarPark1()
-    carParks.append(carPark)
+    #set the current level
+    current_level_num = 0
+    current_level = CarPark_list[current_level_num]
 
-    # level 2
-    carPark = CarPark2()
-    carParks.append(carPark)
+    active_sprite_list = pygame.sprite.Group()
+    player.level = current_level
 
-    # level 3
-    carPark = CarPark3()
-    carParks.append(carPark)
+    player.rect.x = 40
+    player.rect.y = 60
+    active_sprite_list.add(player)
 
-    #current level
-    current_carPark_no = 0
-    current_carPark = carParks[current_carPark_no]
-
+    #loop the game until the player hits the exit button
+    done = False
+    
     # initialise a clock to set game speed/FPS
     clock = pygame.time.Clock()
 
-    # game running logic
-    done = False
-    
+    #main game loop    
     while not done:
 
         # process an event in the game
         for event in pygame.event.get():
-        # set code for using arrow keys
-            if event.type == pygame.KEYDOWN:
-                if event.key == pygame.K_LEFT:
-                    player.changespeed(-5, 0)
-                if event.key == pygame.K_RIGHT:
-                    player.changespeed(5, 0)
-                if event.key == pygame.K_UP:
-                    player.changespeed(0, -5)
-                if event.key == pygame.K_DOWN:
-                    player.changespeed(0, 5)
- 
-            if event.type == pygame.KEYUP:
-                if event.key == pygame.K_LEFT:
-                    player.changespeed(5, 0)
-                if event.key == pygame.K_RIGHT:
-                    player.changespeed(-5, 0)
-                if event.key == pygame.K_UP:
-                    player.changespeed(0, 5)
-                if event.key == pygame.K_DOWN:
-                    player.changespeed(0, -5)
-
-            if event.type == ADDOBSTACLE:
-                new_obstacle = Obstacle()
-                obstacles.add(new_obstacle)
-                movingsprites.add(new_obstacle)
 
             if event.type == pygame.QUIT:
                 done = True #game over or manaully closed
 
-        # game logic
+            # set code for using arrow keys
+            if event.type == pygame.KEYDOWN:
+                if event.key == pygame.K_LEFT:
+                    player.go_left()
+                if event.key == pygame.K_RIGHT:
+                    player.go_right()
+                if event.key == pygame.K_UP:
+                    player.go_up()
+                if event.key == pygame.K_DOWN:
+                    player.go_down()
+ 
+            if event.type == pygame.KEYUP:
+                if event.key == pygame.K_LEFT and player.change_x < 0:
+                    player.stopX()
+                if event.key == pygame.K_RIGHT and player.change_x > 0:
+                    player.stopX()
+                if event.key == pygame.K_UP and player.change_y < 0:
+                    player.stopY()
+                if event.key == pygame.K_DOWN and player.change_y > 0:
+                    player.stopY()
 
-        player.move(current_carPark.wall_list)
+        # update the player car
+       # active_sprite_list.update()
+
+        # update items in the level
+       # current_level.update()
+
+        player.update(current_level.obstacle_list)
 
         # is the player moving out of the carPark?
         if player.rect.x < -15: #left side of screen
-            if current_carPark_no == 0:
-                current_carPark_no = 2
-                current_carPark = carParks[current_carPark_no]
+            if current_level_num == 0:
+                current_level_num = 2
+                current_level = CarPark_list[current_level_num]
                 player.rect.x = 790 #edge of screen
-            elif current_carPark_no == 2:
-                current_carPark_no = 1
-                current_carPark = carParks[current_carPark_no]
+            elif current_level_num == 2:
+                current_level_num = 1
+                current_level = CarPark_list[current_level_num]
                 player.rect.x = 790 #edge of screen
             else:
-                current_carPark_no = 0
-                current_carPark = carParks[current_carPark_no]
+                current_level_num = 0
+                current_level = CarPark_list[current_level_num]
                 player.rect.x = 790 #edge of screen
 
         if player.rect.x > 801: #right side of screen
-            if current_carPark_no == 0:
-                current_carPark_no = 1
-                current_carPark = carParks[current_carPark_no]
+            if current_level_num == 0:
+                current_level_num = 1
+                current_level = CarPark_list[current_level_num]
                 player.rect.x = 0 #edge of screen
-            elif current_carPark_no == 1:
-                current_carPark_no = 2
-                current_carPark = carParks[current_carPark_no]
+            elif current_level_num == 1:
+                current_level_num = 2
+                current_level = CarPark_list[current_level_num]
                 player.rect.x = 0 #edge of screen
             else:
-                current_carPark_no = 0
-                current_carPark = carParks[current_carPark_no]
+                current_level_num = 0
+                current_level = CarPark_list[current_level_num]
                 player.rect.x = 0 #edge of screen
 
         # draw the screen
-        screen.fill(BLACK)
+        current_level.draw(screen)
+        active_sprite_list.draw(screen)
 
-        #draw characters and walls on the screen
-        movingsprites.draw(screen)
-        current_carPark.wall_list.draw(screen)
+        clock.tick(60) #60 FPS
 
         #update the screen
         pygame.display.flip()
 
-        clock.tick(60) #60 FPS
+        
 
     pygame.quit()
 
