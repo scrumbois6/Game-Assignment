@@ -12,7 +12,7 @@ PURPLE = (255,0,255)
 
 # screen variables
 SCREEN_WIDTH = 800
-SCREEN_HEIGHT = 600
+SCREEN_HEIGHT = 480
 
 # font variables
 LARGE_FONT = ("Verdana", 12)
@@ -30,7 +30,7 @@ def popupmsg(msg):
 
 # image variables
 carIMG = pygame.image.load("Game-Assignment\media\car.png")
-obstacleIMG = pygame.image.load("Game-Assignment\media/blueCar.png")
+obstacleIMG = pygame.image.load("Game-Assignment\media/obstacleCar.png")
 backgroundIMG = pygame.image.load("Game-Assignment\media/background1.jpg")
 
 # This class represents the character that the player controls
@@ -184,8 +184,7 @@ class CarPark(object):
 
     def draw(self, screen):
         #draw everthing on the level
-        screen.fill(GREEN)
-
+        screen.blit(backgroundIMG, (0,0))
         self.obstacle_list.draw(screen)
         self.enemy_objects.draw(screen)
 
@@ -197,11 +196,12 @@ class CarPark1(CarPark):
         #make the walls using x, y, width and height from above)
         CarPark.__init__(self, player)
 
-        #This is the list of walls in the form [x, y, width, height]
-        obstacle = [[0, 0, 20, 250],
-                 [0, 350, 20, 250],
-                 [780, 0, 20, 250],
-                 [780, 350, 20, 250],
+        #This is the list of walls in the form [x, y, width, height] width and height should be consistent for image size
+        # screen dimension are x = 800 y = 480
+        obstacle = [[100, 100, 96, 96],
+                 [0, 350, 96, 96],
+                 [780, 0, 96, 96],
+                 [780, 350, 96, 96],
                  ]
 
         # Loop through the list to create the wall, then add to the list
@@ -239,10 +239,10 @@ class CarPark2(CarPark):
         CarPark.__init__(self, player)
 
         #This is the list of walls in the form [x, y, width, height]
-        obstacle = [[0, 0, 20, 250],
-                 [0, 350, 20, 250],
-                 [780, 0, 20, 250],
-                 [780, 350, 20, 250],
+        obstacle = [[0, 0, 96, 96],
+                 [0, 350, 96, 96],
+                 [780, 0, 96, 96],
+                 [780, 350, 96, 96],
                  ]
 
         # Loop through the list to create the wall, then add to the list
@@ -280,13 +280,13 @@ class CarPark3(CarPark):
         CarPark.__init__(self, player)
 
         #This is the list of walls in the form [x, y, width, height, colour]
-        obstacle = [[50, 50, 500, 550],
-                 [50, 50, 800, 400],
-                 [50, 50, 1000, 500],
-                 [50, 50, 1200, 280],
-                 [50, 50, 700, 300],
-                 [50, 50, 800, 400],
-                 [50, 50, 1200, 280],
+        obstacle = [[50, 50, 96, 96],
+                 [50, 50, 96, 96],
+                 [50, 50, 96, 96],
+                 [50, 50, 96, 96],
+                 [50, 50, 96, 96],
+                 [50, 50, 96, 96],
+                 [50, 50, 96, 96],
                  ]
 
         # Loop through the list to create the wall, then add to the list
@@ -398,10 +398,10 @@ def main():
                     player.stopY()
 
         # update the player car
-       # active_sprite_list.update()
+        active_sprite_list.update(current_level.obstacle_list)
 
         # update items in the level
-       # current_level.update()
+
 
         player.update(current_level.obstacle_list)
 
@@ -439,7 +439,6 @@ def main():
         active_sprite_list.draw(screen)
 
         clock.tick(60) #60 FPS
-
         #update the screen
         pygame.display.flip()
 
